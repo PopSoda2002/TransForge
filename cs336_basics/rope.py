@@ -21,12 +21,8 @@ class RoPE(nn.Module):
     def forward(self, x: torch.Tensor, token_positions: torch.Tensor):
         cos = self.cos_cached[token_positions]
         sin = self.sin_cached[token_positions]
-        print(f"shape of x: {x.shape}")
         x_even = x[..., 0::2]
         x_odd = x[..., 1::2]
-        print(f"shape of x after rearrange: {x.shape}")
-        print(f"shape of x_even: {x_even.shape}")
-        print(f"shape of x_odd: {x_odd.shape}")
         even_rot = x_even * cos - x_odd * sin
         odd_rot  = x_even * sin + x_odd * cos
 

@@ -16,7 +16,7 @@ from cs336_basics.embedding_module import EmbeddingModule
 from cs336_basics.rmsnorm_module import RMSNorm
 from cs336_basics.swiglu import SiLU, SwiGLU
 from cs336_basics.rope import RoPE
-from cs336_basics.attention import softmax, scaled_dot_product_attention
+from cs336_basics.attention import softmax, scaled_dot_product_attention, MultiheadAttention
 
 def run_linear(
     d_in: int,
@@ -156,7 +156,12 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    multihead_attention = MultiheadAttention(d_model, num_heads)
+    combined_weight = torch.cat([q_proj_weight, k_proj_weight, v_proj_weight], dim=0)
+    multihead_attention.wqkv.weight.data = combined_weight
+    multihead_attention.output_proj.weight.data = o_proj_weight
+    multihead_attention.o_proj_weight = o_proj_weight
+    return multihead_attention(in_features)
 
 
 def run_multihead_self_attention_with_rope(
@@ -196,7 +201,11 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    multihead_attention = MultiheadAttention(d_model, num_heads)
+    combined_weight = torch.cat([q_proj_weight, k_proj_weight, v_proj_weight], dim=0)
+    multihead_attention.wqkv.weight.data = combined_weight
+    multihead_attention.output_proj.weight.data = o_proj_weight
+    return multihead_attention(in_features, RoPE(theta, d_model // num_heads, max_seq_len))
 
 
 def run_rope(

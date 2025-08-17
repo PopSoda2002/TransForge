@@ -1,4 +1,4 @@
-from cs336_basics.utils import DoubleLinkedList
+from cs336_basics.utils import DoublyLinkedList
 
 def test_double_linked_list():
     dll = DoubleLinkedList()

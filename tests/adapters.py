@@ -17,7 +17,7 @@ from cs336_basics.rmsnorm_module import RMSNorm
 from cs336_basics.swiglu import SiLU, SwiGLU
 from cs336_basics.rope import RoPE
 from cs336_basics.attention import softmax, scaled_dot_product_attention, MultiheadAttention
-from cs336_basics.transformer import Block
+from cs336_basics.transformer import Block, TransformerLM
 
 def run_linear(
     d_in: int,
@@ -396,7 +396,25 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    transformer_lm = TransformerLM(vocab_size, num_layers, d_model, num_heads, d_ff)
+    pair = {}
+    for i in range(num_layers):
+        combined_weight = torch.cat([weights[f"layers.{i}.attn.q_proj.weight"], weights[f"layers.{i}.attn.k_proj.weight"], weights[f"layers.{i}.attn.v_proj.weight"]], dim=0)
+        pair[f"blocks.{i}.attention.wqkv.weight"] = combined_weight
+        pair[f"blocks.{i}.attention.output_proj.weight"] = weights[f"layers.{i}.attn.output_proj.weight"]
+        pair[f"blocks.{i}.feed_forward.W1"] = weights[f"layers.{i}.ffn.w1.weight"]
+        pair[f"blocks.{i}.feed_forward.W2"] = weights[f"layers.{i}.ffn.w2.weight"]
+        pair[f"blocks.{i}.feed_forward.W3"] = weights[f"layers.{i}.ffn.w3.weight"]
+        pair[f"blocks.{i}.norm1.weight"] = weights[f"layers.{i}.ln1.weight"]
+        pair[f"blocks.{i}.norm2.weight"] = weights[f"layers.{i}.ln2.weight"]
+    pair["norm.weight"] = weights["ln_final.weight"]
+    pair["lm_head.weight"] = weights["lm_head.weight"]
+    state_dict = {
+        "embedding.weight": weights["token_embeddings.weight"],
+        **pair,
+    }
+    transformer_lm.load_state_dict(state_dict)
+    return transformer_lm(in_indices, RoPE(rope_theta, d_model // num_heads, context_length))
 
 
 def run_rmsnorm(

@@ -17,6 +17,7 @@ from cs336_basics.rmsnorm_module import RMSNorm
 from cs336_basics.swiglu import SiLU, SwiGLU
 from cs336_basics.rope import RoPE
 from cs336_basics.attention import softmax, scaled_dot_product_attention, MultiheadAttention
+from cs336_basics.transformer import Block
 
 def run_linear(
     d_in: int,
@@ -301,7 +302,19 @@ def run_transformer_block(
         Float[Tensor, "batch sequence_length d_model"] Tensor with the output of
         running the Transformer block on the input features while using RoPE.
     """
-    raise NotImplementedError
+    block = Block(d_model, num_heads, d_ff)
+    combined_weight = torch.cat([weights["attn.q_proj.weight"], weights["attn.k_proj.weight"], weights["attn.v_proj.weight"]], dim=0)
+    state_dict = {
+        "attention.wqkv.weight": combined_weight,
+        "attention.output_proj.weight": weights["attn.output_proj.weight"],
+        "feed_forward.W1": weights["ffn.w1.weight"],
+        "feed_forward.W2": weights["ffn.w2.weight"],
+        "feed_forward.W3": weights["ffn.w3.weight"],
+        "norm1.weight": weights["ln1.weight"],
+        "norm2.weight": weights["ln2.weight"],
+    }
+    block.load_state_dict(state_dict)
+    return block(in_features, RoPE(theta, d_model // num_heads, max_seq_len))
 
 
 def run_transformer_lm(

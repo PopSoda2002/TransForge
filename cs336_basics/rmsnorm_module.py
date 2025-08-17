@@ -3,7 +3,7 @@ import torch.nn as nn
 from einops import einsum
 
 class RMSNorm(nn.Module):
-    def __init__(self, dim, eps=1e-8, device=None, dtype=None):
+    def __init__(self, dim, eps=1e-5, device=None, dtype=None):
         super().__init__()
         self.eps = eps
         self.device = device
@@ -15,5 +15,5 @@ class RMSNorm(nn.Module):
         in_dtype = x.dtype
         x = x.to(torch.float32)
         norm = torch.rsqrt(torch.mean(x**2, dim=-1, keepdim=True) + self.eps) * self.weight
-        result = einsum(x, norm, "... dim, dim -> ... dim")
+        result = x * norm
         return result.to(in_dtype)

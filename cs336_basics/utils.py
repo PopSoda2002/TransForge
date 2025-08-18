@@ -1,3 +1,5 @@
+from collections.abc import Iterable
+import torch
 from typing import Optional
 from collections import defaultdict
 import math
@@ -113,3 +115,15 @@ def learning_rate_cosine_scheduler(it: int, T_w: int, T_c: int, lr_max: float, l
         return lr_min + (lr_max - lr_min) * (1 + math.cos(math.pi * (it - T_w) / (T_c - T_w))) / 2
     else:
         return lr_min
+
+def gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float) -> None:
+    total_norm = 0
+    for p in parameters:
+        if p.grad is not None:
+            total_norm += torch.pow(p.grad.data, 2).sum()
+    total_norm = torch.sqrt(total_norm)
+    if total_norm > max_l2_norm:
+        for p in parameters:
+            if p.grad is not None:
+                p.grad.data *= max_l2_norm / (total_norm + 1e-6)
+    return None

@@ -1,5 +1,6 @@
 from typing import Optional
 from collections import defaultdict
+import math
 
 class Node:
     def __init__(self, val: Optional[bytes]):
@@ -103,3 +104,12 @@ class DoublyLinkedList:
             if cur.val is not None and cur.next.val is not None:
                 res.append((cur.val, cur.next.val))
         return res
+
+
+def learning_rate_cosine_scheduler(it: int, T_w: int, T_c: int, lr_max: float, lr_min: float) -> float:
+    if it < T_w:
+        return lr_max * it / T_w
+    elif it < T_c:
+        return lr_min + (lr_max - lr_min) * (1 + math.cos(math.pi * (it - T_w) / (T_c - T_w))) / 2
+    else:
+        return lr_min

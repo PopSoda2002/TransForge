@@ -18,9 +18,13 @@ class BPETokenizer:
     @classmethod
     def from_files(cls, vocab_filepath: str, merges_filepath: str, special_tokens: list[str] | None = None):
         with open(vocab_filepath, "r", encoding="utf-8") as f:
-            vocab = json.load(f)
+            loaded_vocab = json.load(f)
+        vocab = {int(k): v.encode("utf-8") for k, v in loaded_vocab.items()}
+        
         with open(merges_filepath, "r", encoding="utf-8") as f:
-            merges = json.load(f)
+            loaded_merges = json.load(f)
+        merges = [(p[0].encode("utf-8"), p[1].encode("utf-8")) for p in loaded_merges]
+
         if special_tokens is None:
             special_tokens = []
         return cls(vocab, merges, special_tokens)
@@ -120,8 +124,10 @@ class BPETokenizer:
         return byte_stream.decode("utf-8", errors="replace")
 
 if __name__ == "__main__":
-    bpe_trainer = BPETrainer(input_path="data/TinyStoriesV2-GPT4-train.txt", vocab_size=257 + 100, special_tokens=["<|endoftext|>"], pretokenized_words_path="data/pretokenized_words.json")
-    bpe_trainer.train_bpe()
-    vocab, merges = bpe_trainer.decode_vocab, bpe_trainer.merges
-    tokenizer = BPETokenizer(vocab, merges, special_tokens=["<|endoftext|>"])
+    # bpe_trainer = BPETrainer(input_path="data/TinyStoriesV2-GPT4-train.txt", vocab_size=257 + 100, special_tokens=["<|endoftext|>"], pretokenized_words_path="data/pretokenized_words.json")
+    # bpe_trainer.train_bpe()
+    # vocab, merges = bpe_trainer.decode_vocab, bpe_trainer.merges
+    
+    # tokenizer = BPETokenizer(vocab, merges, special_tokens=["<|endoftext|>"])
+    tokenizer = BPETokenizer.from_files("data/vocab.json", "data/merges.json", special_tokens=["<|endoftext|>"])
     print(tokenizer.encode("Hello, world!"))

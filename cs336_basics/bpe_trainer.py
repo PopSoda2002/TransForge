@@ -163,15 +163,12 @@ if __name__ == "__main__":
     trainer = BPETrainer(input_path="data/TinyStoriesV2-GPT4-train.txt", vocab_size=10000, special_tokens=["<|endoftext|>"], pretokenized_words_path="data/pretokenized_words.json")
     # trainer.pretokenize()
     trainer.train_bpe()
+    # For example, by encoding bytes to a string representation like base64 or a list of ints.
     with open("data/vocab.json", "w") as f:
-        # Convert bytes to strings for JSON serialization
-        # We need a way to represent bytes that are not valid utf-8
-        # A common way is to use a base64 encoding, or simply store the byte values as a list of ints.
-        # However, for vocabulary, it's often intended to be human-readable if possible.
-        # Let's try to decode assuming utf-8, but with error handling.
-        decoded_vocab = {k: v.decode("utf-8", "ignore") for k, v in trainer.decode_vocab.items()}
-        json.dump(decoded_vocab, f)
+        # Convert bytes to a list of ints for JSON serialization, which is lossless.
+        serializable_vocab = {k: list(v) for k, v in trainer.decode_vocab.items()}
+        json.dump(serializable_vocab, f)
     with open("data/merges.json", "w") as f:
-        # Merges are tuples of bytes, convert them to strings as well
-        decoded_merges = [(p1.decode("utf-8", "ignore"), p2.decode("utf-8", "ignore")) for p1, p2 in trainer.merges]
-        json.dump(decoded_merges, f)
+        # Merges are tuples of bytes, convert them to lists of ints as well.
+        serializable_merges = [(list(p1), list(p2)) for p1, p2 in trainer.merges]
+        json.dump(serializable_merges, f)

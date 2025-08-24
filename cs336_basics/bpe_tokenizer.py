@@ -19,11 +19,11 @@ class BPETokenizer:
     def from_files(cls, vocab_filepath: str, merges_filepath: str, special_tokens: list[str] | None = None):
         with open(vocab_filepath, "r", encoding="utf-8") as f:
             loaded_vocab = json.load(f)
-        vocab = {int(k): v.encode("utf-8") for k, v in loaded_vocab.items()}
+        vocab = {int(k): bytes(v) for k, v in loaded_vocab.items()}
         
         with open(merges_filepath, "r", encoding="utf-8") as f:
             loaded_merges = json.load(f)
-        merges = [(p[0].encode("utf-8"), p[1].encode("utf-8")) for p in loaded_merges]
+        merges = [(bytes(p[0]), bytes(p[1])) for p in loaded_merges]
 
         if special_tokens is None:
             special_tokens = []

@@ -164,3 +164,4 @@ cython_debug/
 
 data/
 cs336_basics/try.py
+outputs/

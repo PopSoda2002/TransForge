@@ -1,8 +1,8 @@
 # Configuration for training a Transformer model
 
 tokenizer:
-  vocab_path: "data/vocab.json"
-  merges_path: "data/merges.json"
+  vocab_path: "/root/cs336-assignment1/data/vocab.json"
+  merges_path: "/root/cs336-assignment1/data/merges.json"
   special_tokens: ["<|endoftext|>"]
 
 model:
@@ -28,8 +28,9 @@ scheduler:
 data:
   batch_size: 128
   device: "cuda"
-  path: "data/TinyStoriesV2-GPT4-train.txt"
-  tokenized_path: "data/TinyStoriesV2-GPT4-train-tokenized.pt"
+  path: "/root/cs336-assignment1/data/TinyStoriesV2-GPT4-train.txt"
+  tokenized_path: "/root/cs336-assignment1/data/TinyStoriesV2-GPT4-train-tokenized.pt"
+  num_processes: 10
 
 training:
   max_iterations: 10000

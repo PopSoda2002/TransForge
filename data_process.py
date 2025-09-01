@@ -5,6 +5,7 @@ import os
 from tqdm import tqdm
 import multiprocessing
 import torch
+import numpy as np
 
 from cs336_basics.bpe_tokenizer import BPETokenizer
 
@@ -85,8 +86,9 @@ def preprocess(cfg: DictConfig):
     
     print(f"Finished pretokenizing all chunks. Total tokens: {len(all_tokenized_data)}")
 
-    tensor_data = torch.tensor(all_tokenized_data, dtype=torch.long)
-    torch.save(tensor_data, cfg.data.tokenized_path)
+    # Save to a binary file
+    arr = np.array(all_tokenized_data, dtype='uint16')
+    arr.tofile(cfg.data.tokenized_path)
     print(f"Tokenized data saved to {cfg.data.tokenized_path}")
 
 

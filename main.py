@@ -31,9 +31,10 @@ def train(cfg: DictConfig):
         eps=cfg.optimizer.eps,
         weight_decay=cfg.optimizer.weight_decay,
     )
+    train_data = get_batch_data(data[:int(0.9 * len(data))], cfg.model.batch_size, cfg.model.context_length, cfg.model.device)
+    val_data = get_batch_data(data[int(0.9 * len(data)):], cfg.model.batch_size, cfg.model.context_length, cfg.model.device)
     for i in range(cfg.training.max_iterations):
-        batch_data = get_batch_data(data, cfg.model.batch_size, cfg.model.context_length, cfg.model.device)
-        x, y = next(batch_data)
+        x, y = next(train_data)
         x = x.to(device=cfg.model.device, dtype=torch.long)
         y = y.to(device=cfg.model.device, dtype=torch.long)
         optimizer.zero_grad()
@@ -50,6 +51,12 @@ def train(cfg: DictConfig):
         wandb.log({"loss": loss.item(), "iteration": i, "lr": current_lr})
         if i % cfg.training.log_interval == 0:
             print(f"Iteration {i} loss: {loss.item()}")
+            val_x, val_y = next(val_data)
+            val_x = val_x.to(device=cfg.model.device, dtype=torch.long)
+            val_y = val_y.to(device=cfg.model.device, dtype=torch.long)
+            val_loss = cross_entropy(transformer(val_x, rope), val_y)
+            wandb.log({"val_loss": val_loss.item()})
+            print(f"Iteration {i} val_loss: {val_loss.item()}")
 
     wandb.finish()
 

@@ -11,49 +11,7 @@ from cs336_basics.cross_entropy import cross_entropy
 from cs336_basics.rope import RoPE
 from cs336_basics.utils import learning_rate_cosine_scheduler, gradient_clipping
 from cs336_basics.bpe_tokenizer import BPETokenizer
-from cs336_basics.decoder import get_next_token
-
-def generate_text(model, rope, tokenizer, prompt_tokens, max_length, temperature, top_p, eos_token_id, device, context_length):
-    """自回归生成文本"""
-    model.eval()
-    
-    # 确保 prompt_tokens 形状为 [1, seq_len]
-    if prompt_tokens.dim() == 1:
-        current_tokens = prompt_tokens.unsqueeze(0).to(device)
-    else:
-        current_tokens = prompt_tokens.to(device)
-    
-    generated_tokens = []
-    
-    with torch.no_grad():
-        for _ in range(max_length):
-            # 获取模型输出: [1, seq_len, vocab_size]
-            logits = model(current_tokens, rope)
-            
-            # 取最后一个位置的 logits: [vocab_size]
-            next_token_logits = logits[0, -1, :]
-            
-            # 采样下一个 token
-            next_token = get_next_token(next_token_logits, temperature, top_p)
-            
-            # 检查是否遇到 EOS token
-            if eos_token_id is not None and next_token == eos_token_id:
-                break
-            
-            generated_tokens.append(next_token)
-            
-            # 将新 token 添加到序列中
-            next_token_tensor = torch.tensor([[next_token]], dtype=torch.long, device=device)
-            current_tokens = torch.cat([current_tokens, next_token_tensor], dim=1)
-            
-            # 如果超过 context_length，只保留最后 context_length 个 token
-            if current_tokens.shape[1] > context_length:
-                current_tokens = current_tokens[:, -context_length:]
-    
-    # 解码生成的 tokens
-    decoded_text = tokenizer.decode(generated_tokens)
-    return decoded_text
-
+from cs336_basics.decoder import generate_text
 
 @hydra.main(config_path="conf", config_name="config.yaml")
 def train(cfg: DictConfig):
@@ -79,9 +37,6 @@ def train(cfg: DictConfig):
     val_data = get_batch_data(data[int(0.9 * len(data)):], cfg.model.batch_size, cfg.model.context_length, cfg.model.device)
     bpe_tokenizer = BPETokenizer.from_files(cfg.tokenizer.vocab_path, cfg.tokenizer.merges_path, cfg.tokenizer.special_tokens)
     
-    # 获取 EOS token ID
-    eos_token_id = bpe_tokenizer.encode("<|endoftext|>")[0] if "<|endoftext|>" in bpe_tokenizer.special_tokens else None
-    
     for i in range(cfg.training.max_iterations):
         x, y = next(train_data)
         x = x.to(device=cfg.model.device, dtype=torch.long)
@@ -104,8 +59,10 @@ def train(cfg: DictConfig):
             val_x = val_x.to(device=cfg.model.device, dtype=torch.long)
             val_y = val_y.to(device=cfg.model.device, dtype=torch.long)
             
-            # 生成文本
-            prompt_tokens = val_x[0]  # 取第一个样本作为 prompt
+            prompt_tokens = val_x[0]  # take the first sample as prompt
+            
+            prompt_text = bpe_tokenizer.decode(prompt_tokens.tolist())
+            print(f"Iteration {i} prompt_text: {prompt_text}")
             decoded_text = generate_text(
                 model=transformer,
                 rope=rope,
@@ -114,9 +71,9 @@ def train(cfg: DictConfig):
                 max_length=cfg.decoder.max_length,
                 temperature=cfg.decoder.temperature,
                 top_p=cfg.decoder.p,
-                eos_token_id=eos_token_id,
-                device=cfg.model.device,
-                context_length=cfg.model.context_length
+                eos_token_id=bpe_tokenizer.EOS_TOKEN_ID,
+                context_length=cfg.model.context_length,
+                device=cfg.model.device
             )
             print(f"Iteration {i} decoded_text: {decoded_text}")
             

@@ -3,23 +3,23 @@ from torch import Tensor
 
 
 def get_next_token(logits: Tensor, temperature: float, top_p: float) -> int:
-    # logits 应该是 [vocab_size] 形状的1D张量
+    # logits: [vocab_size]
     normed_logits = logits / temperature
     probs = torch.softmax(normed_logits, dim=-1)
     
-    # 降序排序
+    # sort in descending order
     sorted_probs, sorted_indices = torch.sort(probs, descending=True)
     
-    # 计算累积概率
+    # calculate cumulative probabilities
     cumulative_probs = torch.cumsum(sorted_probs, dim=0)
     
-    # 创建mask：保留累积概率 <= top_p 的token（但至少保留第一个）
+    # create mask: retain tokens with cumulative probability <= top_p (but at least retain the first one)
     mask = cumulative_probs - sorted_probs <= top_p
     
-    # 只保留mask内的概率
+    # only retain probabilities within the mask
     filtered_probs = sorted_probs * mask
     
-    # 重新归一化
+    # re-normalize
     filtered_probs = filtered_probs / filtered_probs.sum()
     
     token_index = torch.multinomial(filtered_probs, num_samples=1)
@@ -27,10 +27,39 @@ def get_next_token(logits: Tensor, temperature: float, top_p: float) -> int:
     
     return next_token.item()
 
-def decode_with_top_p(x: Tensor, temperature: float, top_p: float, max_length: int, EOS_TOKEN_ID) -> str:
-    for _ in range(max_length):
-        next_token = get_next_token(x, temperature, top_p)
-        if next_token == EOS_TOKEN_ID:
-            break
-        x = torch.cat([x, next_token], dim=0)
-    return x
+def generate_text(model, rope, tokenizer, prompt_tokens, max_length, temperature, top_p, eos_token_id, context_length, device):
+    """自回归生成文本"""
+    model.eval()
+    
+    # 确保 prompt_tokens 形状为 [1, seq_len]
+    if prompt_tokens.dim() == 1:
+        current_tokens = prompt_tokens.unsqueeze(0).to(device)
+    else:
+        current_tokens = prompt_tokens.to(device)
+    
+    generated_tokens = []
+    
+    with torch.no_grad():
+        for i in range(max_length):
+            if i == max_length - 1:
+                print("[Stop] Max length reached")
+                break
+            logits = model(current_tokens, rope)
+            next_token_logits = logits[0, -1, :]
+            next_token = get_next_token(next_token_logits, temperature, top_p)
+            
+            if eos_token_id is not None and next_token == eos_token_id:
+                print("[Stop] EOS token encountered")
+                break
+            
+            generated_tokens.append(next_token)
+            
+            next_token_tensor = torch.tensor([[next_token]], dtype=torch.long, device=device)
+            current_tokens = torch.cat([current_tokens, next_token_tensor], dim=1)
+            
+            # truncate context window
+            if current_tokens.shape[1] > context_length:
+                current_tokens = current_tokens[:, -context_length:]
+    
+    decoded_text = tokenizer.decode(generated_tokens)
+    return decoded_text

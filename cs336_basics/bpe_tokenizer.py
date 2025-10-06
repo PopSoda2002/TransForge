@@ -14,6 +14,7 @@ class BPETokenizer:
         self.merge_ranks = {merge: i for i, merge in enumerate(merges)}
         self.special_tokens = special_tokens
         self.PAT =  r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+        self.EOS_TOKEN_ID = self.encode_vocab[b"<|endoftext|>"]
 
     @classmethod
     def from_files(cls, vocab_filepath: str, merges_filepath: str, special_tokens: list[str] | None = None):

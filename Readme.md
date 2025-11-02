@@ -1,10 +1,5 @@
-## My implementation
+Transformer forge based on CS336 Assignment1.
 
-I have added the following image to the repository to help illustrate the BPE tokenizer algorithm:
+It's a repo containing my implementation of tokenizer, transformer model, kernel, Reinforcement Learning etc.
 
-![BPE Tokenizer Diagram](cs336_basics/BPETokenizer.png)
-
-Tests all passed!
-![BPE Tokenizer](cs336_basics/bpe_tokenizer_tests_passed.jpg)
-
-Optimizer
+And I use this as a repo consisting of my development journey and experience too!

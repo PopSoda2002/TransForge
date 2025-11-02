@@ -1,6 +1,7 @@
 <p align="center">
-  <img src="trans_forge.png" alt="TransForge Cover Image" width="800">
+  <img src="trans_forge.png" alt="TransForge Cover Image" width="480">
 </p>
+
 
 
 ## What is this repo for?

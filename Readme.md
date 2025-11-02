@@ -1,4 +1,7 @@
-[cover_image](trans_forge.png)
+<p align="center">
+  <img src="trans_forge.png" alt="TransForge Cover Image" width="800">
+</p>
+
 
 ## What is this repo for?
 Transformer forge based on CS336 Assignment1.

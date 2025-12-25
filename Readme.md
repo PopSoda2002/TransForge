@@ -5,7 +5,7 @@
 
 
 ## What is this repo for?
-Transformer forge based on CS336 Assignment1.
+Transformer forge based on CS336 Assignments.
 
 It's a repo containing my implementation of tokenizer, transformer model, triton kernel, Reinforcement Learning etc.
 
